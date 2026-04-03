@@ -5,7 +5,9 @@
       "Bash(npm install typescript --save-dev 2>&1 | tail -3)",
       "Bash(npm run build 2>&1)",
       "Bash(trash node_modules && npm install 2>&1 | tail -5)",
-      "Bash(npx prisma generate 2>&1 | tail -3)"
+      "Bash(npx prisma generate 2>&1 | tail -3)",
+      "Bash(git checkout -b staging)",
+      "Bash(git push -u origin staging)"
     ]
   }
 }
