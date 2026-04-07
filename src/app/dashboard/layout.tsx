@@ -1,4 +1,5 @@
 import { auth, signOut } from "@/lib/auth";
+import { Logo } from "@/components/logo";
 import Link from "next/link";
 
 export default async function DashboardLayout({
@@ -12,7 +13,8 @@ export default async function DashboardLayout({
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-gray-200 bg-white px-6 py-3">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <Link href="/dashboard" className="text-lg font-bold text-blue-600">
+          <Link href="/dashboard" className="flex items-center gap-2 text-lg font-bold text-blue-600">
+            <Logo size={28} />
             TaskFlow
           </Link>
           <div className="flex items-center gap-4">
