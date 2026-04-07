@@ -10,12 +10,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install neonctl
+        run: npm install -g neonctl@latest
+
       - name: Reset Neon staging branch from main (prod data)
-        uses: neondatabase/reset-branch-action@v1
-        with:
-          project_id: ${{ secrets.NEON_PROJECT_ID }}
-          branch: staging
-          api_key: ${{ secrets.NEON_API_KEY }}
+        run: neonctl branches reset staging --parent --project-id ${{ secrets.NEON_PROJECT_ID }}
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
