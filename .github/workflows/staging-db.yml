@@ -11,13 +11,11 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Reset Neon staging branch from main (prod data)
-        run: |
-          curl -s -X POST \
-            "https://console.neon.tech/api/v2/projects/${{ secrets.NEON_PROJECT_ID }}/branches/${{ secrets.NEON_STAGING_BRANCH_ID }}/restore" \
-            -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d '{"source_branch_id": "${{ secrets.NEON_MAIN_BRANCH_ID }}"}' \
-            | jq -r 'if .branch then "Reset OK: \(.branch.name)" else "Error: \(.message)" end'
+        uses: neondatabase/reset-branch-action@v1
+        with:
+          project_id: ${{ secrets.NEON_PROJECT_ID }}
+          branch: staging
+          api_key: ${{ secrets.NEON_API_KEY }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
