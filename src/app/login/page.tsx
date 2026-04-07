@@ -1,10 +1,14 @@
 import { signIn } from "@/lib/auth";
+import { Logo } from "@/components/logo";
 
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
-        <h1 className="mb-2 text-2xl font-bold text-gray-900">TaskFlow</h1>
+        <div className="mb-4 flex items-center gap-3">
+          <Logo size={36} />
+          <h1 className="text-2xl font-bold text-gray-900">TaskFlow</h1>
+        </div>
         <p className="mb-6 text-sm text-gray-500">
           Connectez-vous pour accéder à vos projets
         </p>
