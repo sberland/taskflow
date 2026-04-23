@@ -1,10 +1,54 @@
 import { getUserProjects } from "@/actions/project.actions";
 import { createProject } from "@/actions/project.actions";
 import Link from "next/link";
+import { Suspense } from "react";
 
-export default async function DashboardPage() {
+async function ProjectList() {
   const projects = await getUserProjects();
 
+  if (projects.length === 0) {
+    return (
+      <div className="rounded-xl border-2 border-dashed border-gray-200 py-16 text-center">
+        <p className="text-gray-400">
+          Aucun projet pour l&apos;instant. Créez votre premier projet !
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {projects.map((project) => (
+        <Link
+          key={project.id}
+          href={`/dashboard/projects/${project.id}`}
+          className="group rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+        >
+          <h2 className="mb-1 font-semibold text-gray-900 group-hover:text-blue-600">
+            {project.name}
+          </h2>
+          {project.description && (
+            <p className="mb-3 text-sm text-gray-500 line-clamp-2">
+              {project.description}
+            </p>
+          )}
+          <div className="flex items-center justify-between text-xs text-gray-400">
+            <span>
+              {project._count.tasks} tâche
+              {project._count.tasks !== 1 ? "s" : ""}
+            </span>
+            <span>
+              {project.members.length} membre
+              {project.members.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+export default function DashboardPage() {
   return (
     <div>
       <div className="mb-8 flex items-center justify-between">
@@ -28,36 +72,20 @@ export default async function DashboardPage() {
         </form>
       </div>
 
-      {projects.length === 0 ? (
-        <div className="rounded-xl border-2 border-dashed border-gray-200 py-16 text-center">
-          <p className="text-gray-400">
-            Aucun projet pour l&apos;instant. Créez votre premier projet !
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project) => (
-            <Link
-              key={project.id}
-              href={`/dashboard/projects/${project.id}`}
-              className="group rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
-            >
-              <h2 className="mb-1 font-semibold text-gray-900 group-hover:text-blue-600">
-                {project.name}
-              </h2>
-              {project.description && (
-                <p className="mb-3 text-sm text-gray-500 line-clamp-2">
-                  {project.description}
-                </p>
-              )}
-              <div className="flex items-center justify-between text-xs text-gray-400">
-                <span>{project._count.tasks} tâche{project._count.tasks !== 1 ? "s" : ""}</span>
-                <span>{project.members.length} membre{project.members.length !== 1 ? "s" : ""}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      <Suspense
+        fallback={
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="h-28 animate-pulse rounded-xl border border-gray-200 bg-gray-100"
+              />
+            ))}
+          </div>
+        }
+      >
+        <ProjectList />
+      </Suspense>
     </div>
   );
 }

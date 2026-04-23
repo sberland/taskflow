@@ -2,7 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 async function requireUser() {
@@ -35,6 +35,8 @@ export async function createTask(projectId: string, formData: FormData) {
     },
   });
 
+  revalidateTag(`project-${projectId}`, "minutes");
+  revalidateTag(`projects-${userId}`, "minutes");
   revalidatePath(`/dashboard/projects/${projectId}`);
 }
 
@@ -51,6 +53,7 @@ export async function updateTaskStatus(taskId: string, status: string) {
     data: { status },
   });
 
+  revalidateTag(`project-${task.projectId}`, "minutes");
   revalidatePath(`/dashboard/projects/${task.projectId}`);
 }
 
@@ -63,6 +66,9 @@ export async function deleteTask(taskId: string) {
   if (!task) return;
 
   await prisma.task.delete({ where: { id: taskId } });
+
+  revalidateTag(`project-${task.projectId}`, "minutes");
+  revalidateTag(`projects-${userId}`, "minutes");
   revalidatePath(`/dashboard/projects/${task.projectId}`);
 }
 
@@ -87,5 +93,6 @@ export async function updateTask(taskId: string, formData: FormData) {
     },
   });
 
+  revalidateTag(`project-${task.projectId}`, "minutes");
   revalidatePath(`/dashboard/projects/${task.projectId}`);
 }

@@ -2,7 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { cacheLife, cacheTag, revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 async function requireUser() {
@@ -28,6 +28,7 @@ export async function createProject(formData: FormData) {
     },
   });
 
+  revalidateTag(`projects-${userId}`, "minutes");
   revalidatePath("/dashboard");
   redirect(`/dashboard/projects/${project.id}`);
 }
@@ -41,12 +42,23 @@ export async function deleteProject(projectId: string) {
   if (member?.role !== "ADMIN") redirect("/dashboard");
 
   await prisma.project.delete({ where: { id: projectId } });
+
+  revalidateTag(`projects-${userId}`, "minutes");
+  revalidateTag(`project-${projectId}`, "minutes");
   revalidatePath("/dashboard");
   redirect("/dashboard");
 }
 
 export async function getUserProjects() {
   const userId = await requireUser();
+  return getUserProjectsCached(userId);
+}
+
+async function getUserProjectsCached(userId: string) {
+  "use cache";
+  cacheTag(`projects-${userId}`);
+  cacheLife("minutes");
+
   return prisma.project.findMany({
     where: { members: { some: { userId } } },
     include: {
@@ -59,7 +71,17 @@ export async function getUserProjects() {
 
 export async function getProject(projectId: string) {
   const userId = await requireUser();
-  const project = await prisma.project.findFirst({
+  const project = await getProjectCached(userId, projectId);
+  if (!project) redirect("/dashboard");
+  return project;
+}
+
+async function getProjectCached(userId: string, projectId: string) {
+  "use cache";
+  cacheTag(`project-${projectId}`);
+  cacheLife("minutes");
+
+  return prisma.project.findFirst({
     where: { id: projectId, members: { some: { userId } } },
     include: {
       tasks: {
@@ -69,6 +91,4 @@ export async function getProject(projectId: string) {
       members: { include: { user: true } },
     },
   });
-  if (!project) redirect("/dashboard");
-  return project;
 }

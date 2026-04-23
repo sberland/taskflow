@@ -1,6 +1,7 @@
 import { getProject } from "@/actions/project.actions";
 import { createTask, updateTaskStatus, deleteTask } from "@/actions/task.actions";
 import { DeleteProjectButton } from "@/components/delete-project-button";
+import { Suspense } from "react";
 
 const STATUS_COLUMNS = [
   { key: "TODO", label: "À faire", color: "bg-gray-100" },
@@ -22,13 +23,9 @@ const PRIORITY_LABELS: Record<string, string> = {
   URGENT: "Urgente",
 };
 
-export default async function ProjectPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const project = await getProject(id);
+async function ProjectContent({ params }: { params: Promise<{ id: string }> }) {
+  const { id: projectId } = await params;
+  const project = await getProject(projectId);
 
   const tasksByStatus = STATUS_COLUMNS.reduce(
     (acc, col) => {
@@ -48,7 +45,8 @@ export default async function ProjectPage({
             <p className="mt-1 text-sm text-gray-500">{project.description}</p>
           )}
           <p className="mt-1 text-xs text-gray-400">
-            {project.members.length} membre{project.members.length !== 1 ? "s" : ""}
+            {project.members.length} membre
+            {project.members.length !== 1 ? "s" : ""}
           </p>
         </div>
         <DeleteProjectButton projectId={project.id} />
@@ -57,7 +55,10 @@ export default async function ProjectPage({
       {/* Formulaire nouvelle tâche */}
       <div className="mb-8 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <h2 className="mb-4 font-semibold text-gray-700">Ajouter une tâche</h2>
-        <form action={createTask.bind(null, project.id)} className="flex flex-wrap gap-3">
+        <form
+          action={createTask.bind(null, project.id)}
+          className="flex flex-wrap gap-3"
+        >
           <input
             name="title"
             type="text"
@@ -70,7 +71,9 @@ export default async function ProjectPage({
             className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
           >
             <option value="LOW">Basse</option>
-            <option value="MEDIUM" selected>Normale</option>
+            <option value="MEDIUM" selected>
+              Normale
+            </option>
             <option value="HIGH">Haute</option>
             <option value="URGENT">Urgente</option>
           </select>
@@ -105,7 +108,9 @@ export default async function ProjectPage({
                   className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm"
                 >
                   <div className="mb-2 flex items-start justify-between gap-2">
-                    <p className="text-sm font-medium text-gray-900">{task.title}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {task.title}
+                    </p>
                     <form action={deleteTask.bind(null, task.id)}>
                       <button
                         type="submit"
@@ -117,10 +122,14 @@ export default async function ProjectPage({
                     </form>
                   </div>
                   {task.description && (
-                    <p className="mb-2 text-xs text-gray-500">{task.description}</p>
+                    <p className="mb-2 text-xs text-gray-500">
+                      {task.description}
+                    </p>
                   )}
                   <div className="flex items-center justify-between">
-                    <span className={`text-xs font-medium ${PRIORITY_COLORS[task.priority]}`}>
+                    <span
+                      className={`text-xs font-medium ${PRIORITY_COLORS[task.priority]}`}
+                    >
                       {PRIORITY_LABELS[task.priority]}
                     </span>
                     {task.dueDate && (
@@ -131,26 +140,60 @@ export default async function ProjectPage({
                   </div>
                   {/* Changer le statut */}
                   <div className="mt-3 flex gap-1">
-                    {STATUS_COLUMNS.filter((s) => s.key !== col.key).map((s) => (
-                      <form key={s.key} action={updateTaskStatus.bind(null, task.id, s.key)}>
-                        <button
-                          type="submit"
-                          className="rounded border border-gray-200 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-100"
+                    {STATUS_COLUMNS.filter((s) => s.key !== col.key).map(
+                      (s) => (
+                        <form
+                          key={s.key}
+                          action={updateTaskStatus.bind(null, task.id, s.key)}
                         >
-                          → {s.label}
-                        </button>
-                      </form>
-                    ))}
+                          <button
+                            type="submit"
+                            className="rounded border border-gray-200 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-100"
+                          >
+                            → {s.label}
+                          </button>
+                        </form>
+                      )
+                    )}
                   </div>
                 </div>
               ))}
               {tasksByStatus[col.key].length === 0 && (
-                <p className="py-4 text-center text-xs text-gray-400">Aucune tâche</p>
+                <p className="py-4 text-center text-xs text-gray-400">
+                  Aucune tâche
+                </p>
               )}
             </div>
           </div>
         ))}
       </div>
     </div>
+  );
+}
+
+export default function ProjectPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-4">
+          <div className="h-10 w-48 animate-pulse rounded bg-gray-200" />
+          <div className="h-24 animate-pulse rounded-xl bg-gray-100" />
+          <div className="grid grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="h-64 animate-pulse rounded-xl bg-gray-100"
+              />
+            ))}
+          </div>
+        </div>
+      }
+    >
+      <ProjectContent params={params} />
+    </Suspense>
   );
 }
