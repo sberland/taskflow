@@ -3,6 +3,10 @@ name: QA DB — reset from prod + migrate
 on:
   push:
     branches: [qa]
+    paths-ignore:
+      - "docs/**"
+      - "todo/**"
+      - "**.md"
 
 jobs:
   reset-and-migrate:
