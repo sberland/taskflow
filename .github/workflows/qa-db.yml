@@ -1,8 +1,8 @@
-name: Staging DB — reset from prod + migrate
+name: QA DB — reset from prod + migrate
 
 on:
   push:
-    branches: [staging]
+    branches: [qa]
 
 jobs:
   reset-and-migrate:
@@ -13,8 +13,8 @@ jobs:
       - name: Install neonctl
         run: npm install -g neonctl@latest
 
-      - name: Reset Neon staging branch from main (prod data)
-        run: neonctl branches reset staging --parent --project-id ${{ secrets.NEON_PROJECT_ID }}
+      - name: Reset Neon qa branch from main (prod data)
+        run: neonctl branches reset qa --parent --project-id ${{ secrets.NEON_PROJECT_ID }}
         env:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
 
@@ -30,4 +30,4 @@ jobs:
       - name: Apply migrations
         run: npx prisma migrate deploy
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL_QA }}
