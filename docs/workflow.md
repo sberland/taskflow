@@ -62,7 +62,7 @@ Convention de nommage : `feature/`, `fix/`, `chore/`, `docs/` + slug court.
 Au démarrage de la feature, on repart de **données prod fraîches** :
 
 ```bash
-neonctl branches reset dev --parent --project-id bitter-fire-12170611
+neonctl branches reset dev --parent --project-id weathered-sea-00511895
 npx prisma migrate deploy
 ```
 

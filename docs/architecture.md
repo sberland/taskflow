@@ -8,10 +8,10 @@ Document de référence : stack, environnements, mapping branches/DB/URLs.
 |---|---|
 | Framework | Next.js 16 (App Router, Cache Components) |
 | Langage | TypeScript |
-| ORM | Prisma |
-| Base de données | PostgreSQL (Neon — serverless + branching) |
-| Auth | Better Auth |
-| Hébergement | Vercel (Fluid Compute, Node.js 24) |
+| ORM | Prisma (avec adapter `@prisma/adapter-neon`) |
+| Base de données | PostgreSQL (Neon — serverless + branching) en région `aws-eu-central-1` |
+| Auth | Auth.js / NextAuth (`@auth/prisma-adapter`) |
+| Hébergement | Vercel (Fluid Compute, Node.js 24) — Functions pinnées en `fra1` (vercel.json) |
 | CI/CD | GitHub Actions |
 
 ## Les trois environnements
@@ -59,20 +59,26 @@ Le DNS est géré par Vercel. Le certificat TLS est auto-renouvelé.
 
 | Secret | Usage |
 |---|---|
-| `NEON_API_KEY` | Authentifie neonctl dans les workflows (reset, create, delete branches) |
-| `NEON_PROJECT_ID` | ID du projet Neon `bitter-fire-12170611` |
-| `DATABASE_URL_QA` | Connection string de la branche Neon `qa` (pour appliquer migrations Prisma en CI) |
+| `NEON_API_KEY` | API key scopée à l'org Neon Vercel-managed — authentifie les workflows (reset, create, delete branches) |
+| `NEON_PROJECT_ID` | ID du projet Neon `weathered-sea-00511895` |
+| `DATABASE_URL_QA` | Connection string pooled de la branche Neon `qa` (pour appliquer migrations Prisma en CI) |
 
 ### Dans Vercel (Environment Variables)
 
-| Scope | Variable | Valeur pointe vers |
-|---|---|---|
-| Production | `DATABASE_URL` | Branche Neon `main` |
-| Production | `DATABASE_URL_UNPOOLED` | Branche Neon `main` (connexion directe sans pooling) |
-| Preview (branche `qa`) | `DATABASE_URL` | Branche Neon `qa` |
-| Preview (autres branches) | `DATABASE_URL` | Auto-provisionnée par l'intégration Neon/Vercel |
-| Toutes | `AUTH_SECRET` | Secret de signature Better Auth |
-| Toutes | `DATABASE_PROVIDER` | `postgresql` |
+Les vars Postgres sont auto-provisionnées par le **Vercel Marketplace Neon integration** sauf override branch-specific :
+
+| Scope | Variable | Valeur pointe vers | Origine |
+|---|---|---|---|
+| Production, Preview, Development | `DATABASE_URL` | Branche Neon `main` (pooled) | Marketplace (auto) |
+| Production, Preview, Development | `DATABASE_URL_UNPOOLED` | Branche Neon `main` (direct) | Marketplace (auto) |
+| Preview (branche Git `qa`) | `DATABASE_URL` | Branche Neon `qa` (pooled) | Override manuel — masque le default |
+| Preview (branche Git `qa`) | `DATABASE_URL_UNPOOLED` | Branche Neon `qa` (direct) | Override manuel |
+| Production, Preview, Development | `POSTGRES_URL`, `PGHOST`, etc. | Aliases vers la branche `main` | Marketplace (auto, compat libs) |
+| Production, Preview, Development | `NEON_PROJECT_ID` | `weathered-sea-00511895` | Marketplace (auto) |
+| Production | `AUTH_SECRET` | Secret de signature Auth.js | Manuel (rotation périodique) |
+| Preview, Development | `AUTH_SECRET` | Secret de signature Auth.js | Manuel (idem) |
+
+> **Local dev** : `.env.local` est généré via `vercel env pull` puis modifié manuellement pour pointer `DATABASE_URL` vers la branche Neon `dev` (la Marketplace pointerait par défaut sur `main`).
 
 ## Workflows GitHub Actions
 
@@ -83,8 +89,12 @@ Le DNS est géré par Vercel. Le certificat TLS est auto-renouvelé.
 
 ## Intégrations externes
 
-- **Neon ↔ GitHub** : intégration native (GitHub App installée sur le repo) — permet aux actions d'accéder à l'API Neon via `NEON_API_KEY`
-- **Neon ↔ Vercel** : intégration native — crée automatiquement une branche Neon par preview deployment Vercel et injecte le `DATABASE_URL` approprié
-- **GitHub ↔ Vercel** : intégration native — chaque push déclenche un déploiement Vercel (production ou preview selon la branche)
+- **Neon ↔ Vercel** : **Vercel Marketplace integration** (slug `neon`, plan `free_v3`, region `fra1`, Neon-Auth désactivé) — provisionne et synchronise automatiquement `DATABASE_URL`/`DATABASE_URL_UNPOOLED` + aliases (POSTGRES_*, PG*) sur tous les environnements Vercel. Le projet Neon vit dans l'org Neon `Vercel: sberland's projects`, billing Neon-managed.
+- **Neon ↔ GitHub Actions** : authentification via `NEON_API_KEY` (clé API scopée à l'org Neon Vercel-managed) — utilisée par `neonctl` et `neondatabase/create-branch-action` pour reset/créer/supprimer des branches.
+- **GitHub ↔ Vercel** : intégration native (Vercel for GitHub) — chaque push déclenche un déploiement Vercel (production sur `main`, preview avec alias `qa-todo.ptitom.eu` sur `qa`).
 
 Pour le détail des interactions entre ces systèmes, voir [architecture-detailed.md](./architecture-detailed.md).
+
+## Procédure : rotation des secrets
+
+Voir [rotation-secrets.md](./rotation-secrets.md) pour la procédure complète (rotate `AUTH_SECRET`, rotate les credentials DB via régénération de la branche Neon, etc.).
