@@ -1,5 +1,11 @@
 # Taskflow — Instructions pour Claude
 
+## Documentation de référence
+
+- [docs/workflow.md](./docs/workflow.md) — parcours détaillé de l'idée à la prod
+- [docs/architecture.md](./docs/architecture.md) — stack, environnements, mapping branches/DB/URLs
+- [docs/architecture-detailed.md](./docs/architecture-detailed.md) — interactions GitHub/Neon/Vercel, cas particuliers
+
 ## Architecture des environnements
 
 | Environnement | URL | Branche GitHub | Branche Neon |

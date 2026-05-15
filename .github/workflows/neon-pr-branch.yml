@@ -7,6 +7,10 @@ on:
       - reopened
       - synchronize
       - closed
+    paths-ignore:
+      - "docs/**"
+      - "todo/**"
+      - "**.md"
 
 concurrency:
   group: pr-${{ github.event.number }}
@@ -27,6 +31,7 @@ jobs:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
           parent: main
           branch_name: preview/pr-${{ github.event.number }}
+          username: neondb_owner
           api_key: ${{ secrets.NEON_API_KEY }}
 
       - name: Setup Node.js
