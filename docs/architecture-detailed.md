@@ -18,20 +18,25 @@ Document technique : comment les trois systèmes communiquent entre eux à chaqu
 ┌──────────────────────────┐          ┌──────────────────────────────┐
 │         Vercel           │          │             Neon             │
 │                          │          │                              │
-│  Project : taskflow      │          │  Project : todo              │
-│                          │          │  Branches : main, qa, dev,   │
-│  Domaines :              │◄─────────┤             preview/pr-<N>   │
-│   - todo.ptitom.eu       │  Neon/   │                              │
-│     (branche main)       │  Vercel  │  Annotations :               │
-│   - qa-todo.ptitom.eu    │  integ.  │   - main = production        │
-│     (branche qa)         │          │                              │
+│  Project : taskflow      │          │  Project : neon-gray-cushion │
+│                          │          │  (weathered-sea-00511895)    │
+│  Domaines :              │◄─────────┤  Region : aws-eu-central-1   │
+│   - todo.ptitom.eu       │  Vercel  │  Org : Vercel-managed        │
+│     (branche main)       │  Market- │  Branches : main, qa, dev,   │
+│   - qa-todo.ptitom.eu    │  place   │             preview/pr-<N>   │
+│     (branche qa)         │  Neon    │                              │
+│                          │          │  Annotations :               │
+│  Functions : fra1        │          │   - main = production        │
+│  (vercel.json regions)   │          │                              │
 │                          │          │                              │
-│  Env vars :              │          │                              │
+│  Env vars (auto via      │          │                              │
+│  Marketplace + overrides │          │                              │
+│  branch-specific qa) :   │          │                              │
 │   - prod : DATABASE_URL  │          │                              │
-│     → ep-fragrant-...    │          │                              │
+│     → ep-dark-resonance  │          │                              │
 │   - preview qa :         │          │                              │
 │     DATABASE_URL         │          │                              │
-│     → ep-rough-...       │          │                              │
+│     → ep-calm-smoke      │          │                              │
 └──────────────────────────┘          └──────────────────────────────┘
 ```
 
@@ -75,10 +80,13 @@ Next.js local ──► Neon (branche dev)
 ```
 GitHub ──(webhook)──► Vercel
                       ├─ Build la branche feature
-                      ├─ Crée automatiquement une branche Neon `preview/br-<commit-sha>`
-                      │  (via l'intégration Neon/Vercel, séparée de notre workflow)
+                      ├─ DATABASE_URL = la valeur Marketplace par défaut
+                      │  (pointe vers la branche Neon `main`)
                       └─ Déploie sur <alias>.vercel.app
 ```
+
+⚠️ Le Vercel Marketplace Neon integration ne crée **pas** de branche Neon par preview deployment.
+La création d'une branche éphémère par PR est gérée uniquement par notre workflow `neon-pr-branch.yml`.
 
 #### Action 2 : Workflow `neon-pr-branch.yml` s'exécute
 
@@ -93,7 +101,7 @@ GitHub Actions ──► Neon API (avec NEON_API_KEY)
                    └─ 3. Commente sur la PR avec les infos de la branche
 ```
 
-**Note** : Vercel crée sa propre branche Neon par preview deployment. Notre workflow `neon-pr-branch.yml` crée une branche additionnelle **dédiée aux tests de migrations**. Ces deux branches coexistent et ont des usages distincts.
+**Note** : Pour que la PR utilise effectivement la branche Neon `preview/pr-<N>` dans son déploiement Vercel, il faudrait ajouter un override branch-specific `DATABASE_URL` sur Vercel (target `preview`, branch `<nom-de-la-branche-PR>`). Sans cela, le deploy de la PR utilise la branche Neon `main` par défaut. La branche `preview/pr-<N>` créée par notre workflow sert avant tout à **tester les migrations de manière isolée**.
 
 ### Trigger GitHub : `pull_request: closed`
 
@@ -128,7 +136,7 @@ GitHub Actions ──► Neon API
 GitHub ──(webhook)──► Vercel
                       ├─ Build la branche `qa`
                       ├─ DATABASE_URL injecté depuis l'env Preview (scope branche qa)
-                      │  → pointe vers branche Neon `qa` (endpoint ep-rough-hall-agvy2ka7)
+                      │  → pointe vers branche Neon `qa` (endpoint ep-calm-smoke-ala8gnpf)
                       └─ Déploie, attribue l'alias qa-todo.ptitom.eu
                          (mapping domain→branch configuré côté Vercel)
 ```
@@ -153,8 +161,8 @@ Pour une app faible traffic en QA, ce n'est pas bloquant. Si ça devenait un pro
 ```
 GitHub ──(webhook)──► Vercel
                       ├─ Build la branche `main`
-                      ├─ DATABASE_URL injecté depuis l'env Production
-                      │  → pointe vers branche Neon `main` (endpoint ep-fragrant-morning)
+                      ├─ DATABASE_URL injecté depuis l'env Production (provisionné par le Marketplace)
+                      │  → pointe vers branche Neon `main` (endpoint ep-dark-resonance-alapyn9y)
                       └─ Déploie en target=production
                          alias todo.ptitom.eu pointé automatiquement sur cette deployment
 ```
